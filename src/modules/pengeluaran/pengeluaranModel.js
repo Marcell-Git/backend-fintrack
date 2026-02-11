@@ -1,22 +1,35 @@
-const db = require('../../config/database');
+const prisma = require("../../config/database");
 
 const createPengeluaran = async (data) => {
   const { user_id, jumlah, kategori, deskripsi, tanggal } = data;
-  const result = await db.query(
-    'INSERT INTO pengeluaran (user_id, jumlah, kategori, deskripsi, tanggal) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-    [user_id, jumlah, kategori, deskripsi, tanggal]
-  );
-  return result.rows[0];
+  return await prisma.pengeluaran.create({
+    data: {
+      user_id: parseInt(user_id),
+      jumlah: parseFloat(jumlah),
+      kategori,
+      deskripsi,
+      tanggal: new Date(tanggal),
+    },
+  });
 };
 
 const getPengeluaranByUserId = async (userId) => {
-  const result = await db.query('SELECT * FROM pengeluaran WHERE user_id = $1', [userId]);
-  return result.rows;
+  return await prisma.pengeluaran.findMany({
+    where: {
+      user_id: parseInt(userId),
+    },
+  });
 };
 
 const getPengeluaranUserByMonth = async (userId, month) => {
-  const result = await db.query('SELECT * FROM pengeluaran WHERE user_id = $1 AND EXTRACT(MONTH FROM created_at) = $2', [userId, month]);
-  return result.rows;
+  // Using queryRaw to maintain exact behavior of EXTRACT(MONTH FROM created_at)
+  // Primsma uses tagged template literals for safe parameter replacement
+  const result = await prisma.$queryRaw`
+    SELECT * FROM pengeluaran 
+    WHERE user_id = ${parseInt(userId)} 
+    AND EXTRACT(MONTH FROM created_at) = ${parseInt(month)}
+  `;
+  return result;
 };
 
 module.exports = {

@@ -3,3 +3,7 @@ node_modules
 .DS_Store
 dist
 coverage
+
+/src/generated/prisma
+
+/src/generated/prisma
