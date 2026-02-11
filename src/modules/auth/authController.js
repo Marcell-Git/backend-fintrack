@@ -1,14 +1,13 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-const userModel = require("../users/userModel");
 const config = require("../../config/env");
-
+const pris = require("../../config/database");
 const register = async (req, res) => {
   try {
     const { username, password } = req.body;
 
     // Check if user exists
-    const existingUser = await userModel.getUserByUsername(username);
+    const existingUser = await prisma.user.findUnique({ where: { username } });
     if (existingUser) {
       return res.status(400).json({ message: "Username already exists" });
     }
@@ -18,7 +17,12 @@ const register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // Create user
-    const newUser = await userModel.createUser(username, hashedPassword);
+    const newUser = await prisma.user.create({
+      data: {
+        username,
+        password: hashedPassword,
+      },
+    });
 
     res.status(201).json({
       message: "User registered successfully",
@@ -34,7 +38,7 @@ const login = async (req, res) => {
     const { username, password } = req.body;
 
     // Check user
-    const user = await userModel.getUserByUsername(username);
+    const user = await prisma.user.findUnique({ where: { username } });
     if (!user) {
       return res.status(400).json({ message: "Invalid username or password" });
     }

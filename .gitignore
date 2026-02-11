@@ -1,9 +1,8 @@
-node_modules
+node_modules/
 .env
 .DS_Store
 dist
 coverage
 
 /src/generated/prisma
-
-/src/generated/prisma
+/generated/prisma
