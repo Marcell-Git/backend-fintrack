@@ -1,8 +1,7 @@
-const userModel = require("./userModel");
-
+const prisma = require('../../config/database');
 const getUsers = async (req, res) => {
   try {
-    const users = await userModel.getAllUsers();
+    const users = await prisma.user.findMany();
     res.json(users);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -11,7 +10,7 @@ const getUsers = async (req, res) => {
 
 const getUser = async (req, res) => {
   try {
-    const user = await userModel.getUserById(req.params.id);
+    const user = await prisma.user.findUnique({ where: { id: req.params.id } });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
