@@ -2,8 +2,17 @@ const prisma = require('../../config/database');
 
 const createPengeluaran = async (req, res) => {
   try {
+    const { jumlah, kategori, deskripsi, tanggal } = req.body;
+    const userId = req.user.id;
+
     const newPengeluaran = await prisma.pengeluaran.create({
-      data: req.body
+      data: {
+        user_id: userId,
+        jumlah: parseFloat(jumlah),
+        kategori,
+        deskripsi,
+        tanggal: new Date(tanggal),
+      },
     });
     res.status(201).json(newPengeluaran);
   } catch (error) {
@@ -13,10 +22,14 @@ const createPengeluaran = async (req, res) => {
 
 const getPengeluaranByUser = async (req, res) => {  
   try {
+    const userId = req.user.id;
     const pengeluaran = await prisma.pengeluaran.findMany({ 
       where: { 
-        user_id: parseInt(req.params.userId) 
-      } 
+        user_id: userId 
+      },
+      orderBy: {
+        tanggal: 'desc'
+      }
     });
     res.json(pengeluaran);
   } catch (error) {
@@ -26,7 +39,7 @@ const getPengeluaranByUser = async (req, res) => {
 
 const getPengeluaranUserByMonth = async (req, res) => {
   try {
-    const userId = parseInt(req.params.userId);
+    const userId = req.user.id;
     const year = parseInt(req.params.year);
     const month = parseInt(req.params.month);
     
@@ -42,6 +55,9 @@ const getPengeluaranUserByMonth = async (req, res) => {
           lte: endDate,
         },
       },
+      orderBy: {
+        tanggal: 'desc'
+      }
     });
     res.json(pengeluaran);
   } catch (error) {

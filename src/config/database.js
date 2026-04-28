@@ -1,6 +1,6 @@
 const { Pool } = require('pg');
 const { PrismaPg } = require('@prisma/adapter-pg');
-const { PrismaClient } = require('../../generated/prisma');
+const { PrismaClient } = require('@prisma/client');
 const config = require('./env');
 
 const connectionString = config.db.connectionString;
