@@ -65,8 +65,38 @@ const getPengeluaranUserByMonth = async (req, res) => {
   }
 }
 
+const deletePengeluaran = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    // Check if pengeluaran exists and belongs to the user
+    const existingPengeluaran = await prisma.pengeluaran.findFirst({
+      where: {
+        id: parseInt(id),
+        user_id: userId,
+      },
+    });
+
+    if (!existingPengeluaran) {
+      return res.status(404).json({ error: "Pengeluaran tidak ditemukan atau Anda tidak memiliki akses" });
+    }
+
+    await prisma.pengeluaran.delete({
+      where: {
+        id: parseInt(id),
+      },
+    });
+
+    res.json({ message: "Pengeluaran berhasil dihapus" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   createPengeluaran,
   getPengeluaranByUser,
   getPengeluaranUserByMonth,
+  deletePengeluaran,
 };
