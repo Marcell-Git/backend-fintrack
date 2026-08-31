@@ -1,69 +1,49 @@
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcrypt");
+const { createRemoteJWKSet, jwtVerify } = require("jose");
 const config = require("../../config/env");
 const prisma = require("../../config/database");
+
+let jwks = null;
+const getJwks = () => {
+  if (!jwks) {
+    jwks = createRemoteJWKSet(new URL(config.supabase.jwksUrl));
+  }
+  return jwks;
+};
+
 const register = async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const authHeader = req.headers["authorization"];
+    const token = authHeader && authHeader.split(" ")[1];
 
-    // Check if user exists
-    const existingUser = await prisma.user.findUnique({ where: { username } });
-    if (existingUser) {
-      return res.status(400).json({ message: "Username already exists" });
+    if (!token) {
+      return res.status(401).json({ message: "No token provided." });
     }
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const { payload } = await jwtVerify(token, getJwks());
+    const authId = payload.sub;
+    const username = payload.email || authId;
 
-    // Create user
-    const newUser = await prisma.user.create({
-      data: {
+    const newUser = await prisma.user.upsert({
+      where: { auth_id: authId },
+      update: {
         username,
-        password: hashedPassword,
+        auth_id: authId,
+      },
+      create: {
+        username,
+        auth_id: authId,
       },
     });
 
     res.status(201).json({
       message: "User registered successfully",
-      user: newUser,
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-const login = async (req, res) => {
-  try {
-    const { username, password } = req.body;
-
-    // Check user
-    const user = await prisma.user.findUnique({ where: { username } });
-    if (!user) {
-      return res.status(400).json({ message: "Invalid username or password" });
-    }
-
-    // Check password
-    const validPassword = await bcrypt.compare(password, user.password);
-    if (!validPassword) {
-      return res.status(400).json({ message: "Invalid username or password" });
-    }
-
-    // Generate token
-    const token = jwt.sign({ id: user.id }, config.jwtSecret, {
-      expiresIn: "1h",
-    });
-
-    res.json({
-      message: "Login successful",
-      token,
       user: {
-        id: user.id,
-        username: user.username,
+        id: newUser.id,
+        username: newUser.username,
       },
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(400).json({ message: "Invalid token or registration failed." });
   }
 };
 
@@ -90,6 +70,5 @@ const getMe = async (req, res) => {
 
 module.exports = {
   register,
-  login,
   getMe,
 };

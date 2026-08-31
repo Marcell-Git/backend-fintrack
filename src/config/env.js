@@ -7,4 +7,9 @@ module.exports = {
     connectionString: process.env.DATABASE_URL,
   },
   jwtSecret: process.env.JWT_SECRET || "your_jwt_secret",
+  supabase: {
+    url: process.env.SUPABASE_URL,
+    jwksUrl: process.env.SUPABASE_JWKS_URL,
+    serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+  },
 };

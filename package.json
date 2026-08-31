@@ -2,9 +2,11 @@
   "dependencies": {
     "@prisma/adapter-pg": "^7.3.0",
     "@prisma/client": "^7.3.0",
+    "@supabase/supabase-js": "^2.112.4",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
     "express": "^5.2.1",
+    "jose": "^6.2.10",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.0.2",
     "node-pg-migrate": "^8.0.4",
