@@ -1,10 +1,16 @@
-const { createRemoteJWKSet, jwtVerify } = require("jose");
 const config = require("../../config/env");
 const prisma = require("../../config/database");
 
+let jose = null;
+const getJose = async () => {
+  if (!jose) jose = await import("jose");
+  return jose;
+};
+
 let jwks = null;
-const getJwks = () => {
+const getJwks = async () => {
   if (!jwks) {
+    const { createRemoteJWKSet } = await getJose();
     jwks = createRemoteJWKSet(new URL(config.supabase.jwksUrl));
   }
   return jwks;
@@ -21,7 +27,8 @@ const verifyToken = async (req, res, next) => {
         .json({ message: "Access denied. No token provided." });
     }
 
-    const { payload } = await jwtVerify(token, getJwks());
+    const { jwtVerify } = await getJose();
+    const { payload } = await jwtVerify(token, await getJwks());
     const authId = payload.sub;
 
     const user = await prisma.user.findUnique({

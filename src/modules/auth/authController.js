@@ -1,10 +1,16 @@
-const { createRemoteJWKSet, jwtVerify } = require("jose");
 const config = require("../../config/env");
 const prisma = require("../../config/database");
 
+let jose = null;
+const getJose = async () => {
+  if (!jose) jose = await import("jose");
+  return jose;
+};
+
 let jwks = null;
-const getJwks = () => {
+const getJwks = async () => {
   if (!jwks) {
+    const { createRemoteJWKSet } = await getJose();
     jwks = createRemoteJWKSet(new URL(config.supabase.jwksUrl));
   }
   return jwks;
@@ -19,7 +25,8 @@ const register = async (req, res) => {
       return res.status(401).json({ message: "No token provided." });
     }
 
-    const { payload } = await jwtVerify(token, getJwks());
+    const { jwtVerify } = await getJose();
+    const { payload } = await jwtVerify(token, await getJwks());
     const authId = payload.sub;
     const username = payload.email || authId;
 
