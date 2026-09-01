@@ -30,6 +30,7 @@ const configureApp = () => {
     "/api/pengeluaran",
     require("./modules/pengeluaran/pengeluaranRoutes"),
   );
+  app.use("/api/categories", require("./modules/categories/categoryRoutes"));
 
   return app;
 };

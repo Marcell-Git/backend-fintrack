@@ -1,5 +1,8 @@
 const config = require("../../config/env");
 const prisma = require("../../config/database");
+const {
+  seedDefaultCategories,
+} = require("../categories/defaultCategories");
 
 let jose = null;
 const getJose = async () => {
@@ -31,6 +34,11 @@ const register = async (req, res) => {
       const authId = payload.sub;
       const email = payload.email || authId;
 
+      const existingUser = await prisma.user.findUnique({
+        where: { auth_id: authId },
+        select: { id: true },
+      });
+
       const newUser = await prisma.user.upsert({
         where: { auth_id: authId },
         update: {
@@ -42,6 +50,10 @@ const register = async (req, res) => {
           auth_id: authId,
         },
       });
+
+      if (!existingUser) {
+        await seedDefaultCategories(newUser.id, prisma);
+      }
 
       res.status(201).json({
         message: "User registered successfully",

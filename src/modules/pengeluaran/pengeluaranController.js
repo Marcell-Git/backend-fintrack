@@ -5,6 +5,12 @@ const createPengeluaran = async (req, res) => {
     const { jumlah, kategori, deskripsi, tanggal } = req.body;
     const userId = req.user.id;
 
+    if (!kategori || !(await prisma.category.findFirst({
+      where: { user_id: userId, name: kategori },
+    }))) {
+      return res.status(400).json({ error: "Kategori tidak ditemukan" });
+    }
+
     const newPengeluaran = await prisma.pengeluaran.create({
       data: {
         user_id: userId,
