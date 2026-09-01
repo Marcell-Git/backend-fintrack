@@ -25,30 +25,35 @@ const register = async (req, res) => {
       return res.status(401).json({ message: "No token provided." });
     }
 
-    const { jwtVerify } = await getJose();
-    const { payload } = await jwtVerify(token, await getJwks());
-    const authId = payload.sub;
-    const email = payload.email || authId;
+    try {
+      const { jwtVerify } = await getJose();
+      const { payload } = await jwtVerify(token, await getJwks());
+      const authId = payload.sub;
+      const email = payload.email || authId;
 
-    const newUser = await prisma.user.upsert({
-      where: { auth_id: authId },
-      update: {
-        email,
-        auth_id: authId,
-      },
-      create: {
-        email,
-        auth_id: authId,
-      },
-    });
+      const newUser = await prisma.user.upsert({
+        where: { auth_id: authId },
+        update: {
+          email,
+          auth_id: authId,
+        },
+        create: {
+          email,
+          auth_id: authId,
+        },
+      });
 
-    res.status(201).json({
-      message: "User registered successfully",
-      user: {
-        id: newUser.id,
-        email: newUser.email,
-      },
-    });
+      res.status(201).json({
+        message: "User registered successfully",
+        user: {
+          id: newUser.id,
+          email: newUser.email,
+        },
+      });
+    } catch (err) {
+      console.error("[AUTH:REGISTER]", err?.message || err);
+      res.status(400).json({ message: "Invalid token or registration failed." });
+    }
   } catch (error) {
     res.status(400).json({ message: "Invalid token or registration failed." });
   }
