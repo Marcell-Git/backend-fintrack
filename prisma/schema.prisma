@@ -12,7 +12,6 @@ datasource db {
 model User {
   id          Int           @id @default(autoincrement())
   email       String        @unique
-  password    String        @default("")
   auth_id     String?       @unique
   created_at  DateTime      @default(now())
   pengeluaran Pengeluaran[]
