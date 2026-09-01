@@ -28,16 +28,16 @@ const register = async (req, res) => {
     const { jwtVerify } = await getJose();
     const { payload } = await jwtVerify(token, await getJwks());
     const authId = payload.sub;
-    const username = payload.email || authId;
+    const email = payload.email || authId;
 
     const newUser = await prisma.user.upsert({
       where: { auth_id: authId },
       update: {
-        username,
+        email,
         auth_id: authId,
       },
       create: {
-        username,
+        email,
         auth_id: authId,
       },
     });
@@ -46,7 +46,7 @@ const register = async (req, res) => {
       message: "User registered successfully",
       user: {
         id: newUser.id,
-        username: newUser.username,
+        email: newUser.email,
       },
     });
   } catch (error) {
@@ -60,7 +60,7 @@ const getMe = async (req, res) => {
       where: { id: req.user.id },
       select: {
         id: true,
-        username: true,
+        email: true,
         created_at: true,
       },
     });

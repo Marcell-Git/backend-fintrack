@@ -35,7 +35,7 @@ const verifyToken = async (req, res, next) => {
       where: { auth_id: authId },
       select: {
         id: true,
-        username: true,
+        email: true,
         auth_id: true,
       },
     });
@@ -48,7 +48,7 @@ const verifyToken = async (req, res, next) => {
 
     req.user = {
       id: user.id,
-      username: user.username,
+      email: user.email,
       auth_id: authId,
     };
     next();
