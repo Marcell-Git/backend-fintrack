@@ -4,6 +4,15 @@ const {
   seedDefaultCategories,
 } = require("../categories/defaultCategories");
 
+const USERNAME_MAX_LENGTH = 50;
+
+// Rapikan spasi; string kosong dianggap tidak ada
+const normalizeUsername = (value) => {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim().replace(/\s+/g, " ");
+  return trimmed || null;
+};
+
 let jose = null;
 const getJose = async () => {
   if (!jose) jose = await import("jose");
@@ -33,10 +42,12 @@ const register = async (req, res) => {
       const { payload } = await jwtVerify(token, await getJwks());
       const authId = payload.sub;
       const email = payload.email || authId;
+      // Username diisi saat daftar dan dikirim lewat user_metadata Supabase
+      const metadataUsername = normalizeUsername(payload.user_metadata?.username);
 
       const existingUser = await prisma.user.findUnique({
         where: { auth_id: authId },
-        select: { id: true },
+        select: { id: true, username: true },
       });
 
       const newUser = await prisma.user.upsert({
@@ -44,10 +55,13 @@ const register = async (req, res) => {
         update: {
           email,
           auth_id: authId,
+          // Jangan timpa username yang sudah diubah user lewat halaman Akun
+          ...(!existingUser?.username && metadataUsername ? { username: metadataUsername } : {}),
         },
         create: {
           email,
           auth_id: authId,
+          username: metadataUsername,
         },
       });
 
@@ -78,6 +92,7 @@ const getMe = async (req, res) => {
       select: {
         id: true,
         email: true,
+        username: true,
         created_at: true,
       },
     });
@@ -92,7 +107,38 @@ const getMe = async (req, res) => {
   }
 };
 
+const updateMe = async (req, res) => {
+  try {
+    const username = normalizeUsername(req.body?.username);
+
+    if (!username) {
+      return res.status(400).json({ message: "Username wajib diisi." });
+    }
+    if (username.length > USERNAME_MAX_LENGTH) {
+      return res
+        .status(400)
+        .json({ message: `Username maksimal ${USERNAME_MAX_LENGTH} karakter.` });
+    }
+
+    const user = await prisma.user.update({
+      where: { id: req.user.id },
+      data: { username },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        created_at: true,
+      },
+    });
+
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   register,
   getMe,
+  updateMe,
 };
