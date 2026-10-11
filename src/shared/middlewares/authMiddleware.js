@@ -27,9 +27,14 @@ const verifyToken = async (req, res, next) => {
         .json({ message: "Access denied. No token provided." });
     }
 
-    const { jwtVerify } = await getJose();
-    const { payload } = await jwtVerify(token, await getJwks());
-    const authId = payload.sub;
+    let authId;
+    try {
+      const { jwtVerify } = await getJose();
+      const { payload } = await jwtVerify(token, await getJwks());
+      authId = payload.sub;
+    } catch (error) {
+      return res.status(401).json({ message: "Invalid token." });
+    }
 
     const user = await prisma.user.findUnique({
       where: { auth_id: authId },
@@ -53,7 +58,9 @@ const verifyToken = async (req, res, next) => {
     };
     next();
   } catch (error) {
-    return res.status(403).json({ message: "Invalid token." });
+    // Error database/JWKS bukan berarti token tidak valid — jangan bikin user ter-logout
+    console.error("Auth middleware error:", error);
+    return res.status(503).json({ message: "Service temporarily unavailable." });
   }
 };
 
